@@ -6,6 +6,8 @@ const {
 //Importing Models
 const User = require("../models/userModel");
 
+const JWT = require("jsonwebtoken");
+
 module.exports.signup = async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
@@ -90,7 +92,7 @@ module.exports.signin = async (req, res) => {
     return res.status(400).json(customErrorResponse);
   }
 
-  //Compare User Passwordd and Hashed Password From database
+  //Compare User Password and Hashed Password From database
   const isPasswordMatch = await User().comparePassword(
     password,
     user.hashedPassword
@@ -108,14 +110,48 @@ module.exports.signin = async (req, res) => {
     return res.status(400).json(customErrorResponse);
   }
 
-  return res.send(user);
+  //CREATING JSON WEB TOKEN
+  const jwtToken = JWT.sign({ userId: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "1d",
+  });
+
+  // Extract expiration time from JWT token
+  const decodedToken = JWT.verify(jwtToken, process.env.JWT_SECRET);
+  const expiresIn = decodedToken.exp - decodedToken.iat; // Difference between expiration time and issued at time
+
+  // Set cookie with expiration time
+  res.cookie("jwttoken", jwtToken, {
+    expires: new Date(Date.now() + expiresIn * 1000), // Convert expiresIn to milliseconds
+  });
+
+  customSuccessResponse.success = true;
+  customSuccessResponse.data = {
+    data: {
+      token: jwtToken,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+      },
+    },
+  };
+  customSuccessResponse.message = "User Signed in Successfully";
+  customSuccessResponse.statusCode = 200;
+  customSuccessResponse.statusText = "OK";
+
+  //Sending Response
+  return res.status(200).json(customSuccessResponse);
 };
 
 module.exports.signout = (req, res) => {
+  res.clearCookie("token");
+
   //Modifying Global Response
   customSuccessResponse.status = true;
   customSuccessResponse.data = {};
-  customSuccessResponse.message = "SignOut";
+  customSuccessResponse.message = "User Sign out successfully";
   customSuccessResponse.statusCode = 200;
   customSuccessResponse.statusText = "OK";
 
