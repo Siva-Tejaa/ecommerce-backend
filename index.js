@@ -9,6 +9,7 @@ const connectDB = require("./config/dbConfig");
 
 //Route File Imports
 const authRoute = require("./routes/authRoute");
+const userRoute = require("./routes/userRoute");
 
 //Middlewares
 app.use(express.json());
@@ -17,6 +18,8 @@ app.use(cors());
 
 //Routes
 app.use("/api", authRoute);
+
+app.use("/api", userRoute);
 
 //PORT
 const port = process.env.PORT;

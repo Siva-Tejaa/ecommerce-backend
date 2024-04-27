@@ -16,9 +16,4 @@ router.post("/signin", validateSignin, signin);
 //SIGNOUT || GET
 router.get("/signout", signout);
 
-//TEST ROUTE || POST
-router.get("/testroute", isValidToken, (req, res) => {
-  return res.json(req.auth);
-});
-
 module.exports = router;
